@@ -9,3 +9,43 @@
 #    in the appropriate HTML elements. Use the following as a guide for what the final product should look like, 
 #    but feel free to create your own design.
 
+# import necessary libraries
+from flask import Flask, render_template, redirect
+from flask_pymongo import PyMongo
+import mars_scraping
+#from mars_scraping.py import mars_scrape
+#from mars_scraping.py import init_browser
+
+# create instance of Flask app
+# Use PyMongo to set up mongo connection; define db and collection
+
+app = Flask(__name__)
+app.config["MONGO_URI"] = "mongodb://localhost:27017/mars_db"
+mongo = PyMongo(app)
+
+# create route that renders index.html template and finds documents from mongo
+# mars_db is the database; mars_data is the collection
+
+@app.route("/")
+def index():
+    # Get the data from mobgodb.
+    mars_mission_data = mongo.db.mars_data_coll.find_one()
+
+    # return template and data
+    return render_template("index.html", mars_mission_data=mars_mission_data)
+
+# Route that will trigger scrape functions
+@app.route("/scrape")
+def scrape():
+    # Run scraped functions
+    mars_mission_data = mars_scraping.mars_scrape()
+
+    # Insert mars_mission_data into database
+    mongo.db.mars_data.update({},mars_mission_data,upsert = True)
+
+    # Redirect back to home page
+    return redirect("/", code=302)
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
